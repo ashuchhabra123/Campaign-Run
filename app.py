@@ -20,6 +20,7 @@ def init_db():
                         created_date TEXT,
                         updated_by TEXT,
                         updated_date TEXT
+                        
                     )''')
 
         # Table for campaigns
@@ -27,7 +28,6 @@ def init_db():
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         campaign_name TEXT,
                         rule_name TEXT,
-                        column_name TEXT,
                         created_by TEXT,
                         created_date TEXT,
                         updated_by TEXT,
@@ -100,13 +100,13 @@ def delete_rule(id):
 @app.route('/campaign/', methods=['GET', 'POST'])
 def campaign():
     if request.method == 'POST':
-        rule_name = request.form['rule_name']
         campaign_name = request.form['campaign_name']
+        rule_name = request.form['rule_name']
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         with sqlite3.connect(DB_NAME) as conn:
             c = conn.cursor()
-            c.execute("INSERT INTO campaigns (rule_name, campaign_name, created_by, created_date)",
+            c.execute("INSERT INTO campaigns (rule_name, campaign_name, created_by, created_date) VALUES (?, ?, ?, ?)" ,
                       (rule_name, campaign_name, 'admin', now))
             conn.commit()
         return redirect(url_for('campaign'))
@@ -116,6 +116,7 @@ def campaign():
 @app.route('/campaign/table')
 def campaign_table():
     with sqlite3.connect(DB_NAME) as conn:
+        conn.row_factory = sqlite3.Row
         c = conn.cursor()
         c.execute("SELECT * FROM campaigns")
         campaigns = c.fetchall()
@@ -124,8 +125,8 @@ def campaign_table():
 @app.route('/campaign/edit/<int:id>', methods=['GET', 'POST'])
 def edit_campaign(id):
     if request.method == 'POST':
-        rule_name = request.form['rule_name']
         campaign_name = request.form['campaign_name']
+        rule_name = request.form['rule_name']
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         with sqlite3.connect(DB_NAME) as conn:
@@ -168,6 +169,31 @@ def add_campaign():
 @app.route('/edit_rules')
 def edit_rules():
     return render_template('edit_rules.html')
+
+@app.route('/dashboard')
+def dashboard():
+    with sqlite3.connect(DB_NAME) as conn:
+        c = conn.cursor()
+        c.execute("SELECT * FROM rules")
+        rules = [
+            {
+                'id': row[0], 'rule_name': row[1], 'column_name': row[2], 'value': row[3],
+                'created_by': row[4], 'created_date': row[5],
+                'updated_by': row[6], 'last_updated': row[7]
+            } for row in c.fetchall()
+        ]
+        c.execute("SELECT * FROM campaigns")
+        campaigns = [
+            {
+                'id': row[0], 'campaign_name': row[1], 'rule_name': row[2],
+                'created_by': row[3], 'created_date': row[4],
+                'updated_by': row[5], 'last_updated': row[6],
+                'campaign_name': row[2]  # adjust if you store campaign_name differently
+            } for row in c.fetchall()
+        ]
+    return render_template('dashboard.html', rules=rules, campaigns=campaigns)
+
+
 
 # ---------- Main ----------
 if __name__ == '__main__':

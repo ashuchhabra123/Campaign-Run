@@ -18,46 +18,41 @@
     
     <div class="action-buttons">
       <a href="{{ url_for('add_campaign') }}" class="btn btn-success">Add Campaign</a>
-      {% for campaign in campaigns %}
-      <a href="{{ url_for('edit_campaign', id=campaign.id) }}" class="btn btn-primary">Edit</a>
-      {% endfor %}
+      
     </div>
-
   </div>
 
 
   <div class="table-responsive">
     <table class="table table-bordered table-hover text-center">
       <thead class="table-dark">
-        <tr>
-          <th>Serial No.</th>
-          <th>Campaign Name</th>
-          <th>Rule Name</th>
-          <th>Last Updated Date</th>
-          <th>Updated By</th>
-          <th>Created Date</th>
-          <th>Created By</th>
-        </tr>
+      <tr>
+        <th>Serial No</th>
+        <th>Campaign Name</th>
+        <th>Rule Name</th>
+        <th>Last Updated</th>
+        <th>Updated By</th>
+        <th>Created Date</th>
+        <th>Created By</th>
+        <th>Action</th>
+      </tr>
       </thead>
       <tbody>
+      {% for campaign in campaigns %}
         <tr>
-          <td>1</td>
-          <td>No Empty Fields</td>
-          <td>Email</td>
-          <td>2025-05-25</td>
-          <td>admin</td>
-          <td>2025-05-24</td>
-          <td>admin</td>
+            <td>{{ loop.index }}</td>
+            <td>{{ campaign.campaign_name }}</td>
+            <td>{{ campaign.rule_name }}</td>
+            <td>{{ campaign.last_updated }}</td>
+            <td>{{ campaign.updated_by }}</td>
+            <td>{{ campaign.created_date }}</td>
+            <td>{{ campaign.created_by }}</td>
+            <td>
+                <a href="{{ url_for('edit_campaign', id=campaign['id']) }}" class="btn btn-sm btn-primary">Edit</a>
+                <a href="{{ url_for('delete_campaign', id=campaign['id']) }}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
         </tr>
-        <tr>
-          <td>2</td>
-          <td>Min Age</td>
-          <td>Age</td>
-          <td>2025-05-26</td>
-          <td>moderator</td>
-          <td>2025-05-24</td>
-          <td>admin</td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>
