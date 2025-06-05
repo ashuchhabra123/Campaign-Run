@@ -6,56 +6,36 @@
 <div class="container mt-4">
     <h2 class="text-center mb-4">Dashboard - Rules & Campaigns</h2>
 
-    <div class="row gx-5">  <!-- Add gap between columns -->
-        <div class="col-md-6 mb-4">  <!-- Add margin-bottom for smaller screens -->
-            <h4>Rules</h4>
-            <a href="{{ url_for('add_rules') }}" class="btn btn-success mb-2">Add Rule</a>
+    <div class="row gx-5">
+        <!-- Rules Table (Initially Hidden) -->
+        <div class="col-md-12 mb-4" id="rules-panel" style="display:none;">
+            <h4>Rules Tagged in Selected Campaign</h4>
             <div class="table-responsive">
                 <table class="table table-bordered table-sm table-striped">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Serial No</th>
+                            <th>#</th>
                             <th>Rule Name</th>
-                            <th>Column Name</th>
-                            <th>Value</th>
-                            <th>Last Updated</th>
-                            <th>Updated By</th>
-                            <th>Created Date</th>
-                            <th>Created By</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for rule in rules %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ rule.rule_name }}</td>
-                            <td>{{ rule.column_name }}</td>
-                            <td>{{ rule.value }}</td>
-                            <td>{{ rule.last_updated }}</td>
-                            <td>{{ rule.updated_by }}</td>
-                            <td>{{ rule.created_date }}</td>
-                            <td>{{ rule.created_by }}</td>
-                            <td>
-                                <a href="{{ url_for('edit_rule', id=rule.id) }}" class="btn btn-sm btn-primary">Edit</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="campaign-rules-body">
+                        <!-- Dynamically inserted via JS -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="col-md-6 mb-4">
+        <!-- Campaigns Table -->
+        <div class="col-md-12 mb-4">
             <h4>Campaigns</h4>
             <a href="{{ url_for('add_campaign') }}" class="btn btn-success mb-2">Add Campaign</a>
             <div class="table-responsive">
-                <table class="table table-bordered table-sm table-striped">
+                <table class="table table-bordered table-sm table-striped" id="campaigns-table">
                     <thead class="thead-dark">
                         <tr>
                             <th>Serial No</th>
                             <th>Campaign Name</th>
-                            <th>Rule Name</th>
+                            <th>Tagged Rules</th>
                             <th>Last Updated</th>
                             <th>Updated By</th>
                             <th>Created Date</th>
@@ -65,16 +45,16 @@
                     </thead>
                     <tbody>
                         {% for campaign in campaigns %}
-                        <tr>
+                        <tr data-campaign-id="{{ campaign[0] }}" class="campaign-row" style="cursor:pointer;">
                             <td>{{ loop.index }}</td>
-                            <td>{{ campaign.campaign_name }}</td>
-                            <td>{{ campaign.rule_name }}</td>
-                            <td>{{ campaign.last_updated }}</td>
-                            <td>{{ campaign.updated_by }}</td>
-                            <td>{{ campaign.created_date }}</td>
-                            <td>{{ campaign.created_by }}</td>
+                            <td>{{ campaign[1] }}</td>
+                            <td>{{ campaign[8] or 'None' }}</td>
+                            <td>{{ campaign[5] or '—' }}</td>
+                            <td>{{ campaign[4] or '—' }}</td>
+                            <td>{{ campaign[3] }}</td>
+                            <td>{{ campaign[2] }}</td>
                             <td>
-                                <a href="{{ url_for('edit_campaign', id=campaign.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                <a href="{{ url_for('edit_campaign', id=campaign[0]) }}" class="btn btn-sm btn-primary">Edit</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -84,4 +64,33 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript to Fetch and Display Rules -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('.campaign-row');
+        const rulesPanel = document.getElementById('rules-panel');
+        const rulesBody = document.getElementById('campaign-rules-body');
+
+        rows.forEach(row => {
+            row.addEventListener('click', () => {
+                const campaignId = row.getAttribute('data-campaign-id');
+                fetch(`/campaign/${campaignId}/rules`)
+                    .then(res => res.json())
+                    .then(data => {
+                        rulesBody.innerHTML = '';
+                        if (data.length === 0) {
+                            rulesBody.innerHTML = '<tr><td colspan="2" class="text-center">No rules tagged</td></tr>';
+                        } else {
+                            data.forEach((rule, index) => {
+                                rulesBody.innerHTML += `<tr><td>${index + 1}</td><td>${rule}</td></tr>`;
+                            });
+                        }
+                        rulesPanel.style.display = 'block';
+                        rulesPanel.scrollIntoView({ behavior: 'smooth' });
+                    });
+            });
+        });
+    });
+</script>
 {% endblock %}

@@ -42,7 +42,14 @@
         <tr>
             <td>{{ loop.index }}</td>
             <td>{{ campaign.campaign_name }}</td>
-            <td>{{ campaign.rule_name }}</td>
+            <td> <select name="rule_ids" multiple class="form-control">
+              {% for rule in rules %}
+              <option value="{{ rule[0] }}" {% if rule[0] in selected_rule_ids %}selected{% endif %}>
+              {{ rule[1] }}
+              </option>
+              {% endfor %}
+              </select>
+            </td>
             <td>{{ campaign.last_updated }}</td>
             <td>{{ campaign.updated_by }}</td>
             <td>{{ campaign.created_date }}</td>

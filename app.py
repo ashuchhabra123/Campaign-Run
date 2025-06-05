@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import sqlite3
 from datetime import datetime
 
@@ -173,25 +173,35 @@ def edit_rules():
 @app.route('/dashboard')
 def dashboard():
     with sqlite3.connect(DB_NAME) as conn:
+        conn.row_factory = sqlite3.Row  # Enables dictionary-like access
         c = conn.cursor()
         c.execute("SELECT * FROM rules")
-        rules = [
-            {
-                'id': row[0], 'rule_name': row[1], 'column_name': row[2], 'value': row[3],
-                'created_by': row[4], 'created_date': row[5],
-                'updated_by': row[6], 'last_updated': row[7]
-            } for row in c.fetchall()
-        ]
-        c.execute("SELECT * FROM campaigns")
-        campaigns = [
-            {
-                'id': row[0], 'campaign_name': row[1], 'rule_name': row[2],
-                'created_by': row[3], 'created_date': row[4],
-                'updated_by': row[5], 'last_updated': row[6],
-                'campaign_name': row[2]  # adjust if you store campaign_name differently
-            } for row in c.fetchall()
-        ]
+        rules = c.fetchall()
+
+        c.execute("""
+            SELECT campaigns.*, GROUP_CONCAT(rules.rule_name, ', ') AS rule_names
+            FROM campaigns 
+            LEFT JOIN campaign_rules ON campaigns.id = campaign_rules.campaign_id 
+            LEFT JOIN rules ON campaign_rules.rule_id = rules.id 
+            GROUP BY campaigns.id
+        """)
+        campaigns = c.fetchall()
+
     return render_template('dashboard.html', rules=rules, campaigns=campaigns)
+
+
+@app.route('/campaign/<int:campaign_id>/rules')
+def campaign_rules_json(campaign_id):
+    with sqlite3.connect(DB_NAME) as conn:
+        c = conn.cursor()
+        c.execute("""
+            SELECT rules.rule_name FROM campaign_rules 
+            JOIN rules ON campaign_rules.rule_id = rules.id 
+            WHERE campaign_rules.campaign_id=?
+        """, (campaign_id,))
+        rules = [row[0] for row in c.fetchall()]
+    return jsonify(rules)
+
 
 
 
